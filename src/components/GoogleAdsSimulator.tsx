@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
 import { 
   Search, Plus, Target, Filter, Sidebar, Users, HelpCircle, Bell, X, Download, Trash, Smartphone, Globe, ImageIcon, MoreVertical, ArrowLeft, Home, 
-  ShoppingBag, Megaphone, MousePointer, CreditCard, Layout, Eye, PlayCircle, MapPin, Tag
+  ShoppingBag, Megaphone, MousePointer, CreditCard, Layout, Eye, PlayCircle, MapPin, Tag, ExternalLink, Play
 } from 'lucide-react';
 
 export default function GoogleAdsSimulator({ onExit }) {
@@ -17,14 +18,14 @@ export default function GoogleAdsSimulator({ onExit }) {
   function getInitialDraft(goal = 'SALES', type = 'SEARCH') {
     return {
       settings: { 
-        name: 'G_FR_RECHERCHE_BRAND_2024', // Example of professional naming
+        name: 'G_FR_RECHERCHE_BRAND_2024',
         goal: goal, 
         type: type, 
         budget: 20, 
         bidding: 'MAXIMIZE_CONVERSIONS', 
         location: 'Belgique', 
         language: 'Français',
-        networks: { search: true, display: true } // Added network selection
+        networks: { search: true, display: true }
       },
       adGroup: { 
         name: 'Groupe d\'annonces 1', 
@@ -32,14 +33,16 @@ export default function GoogleAdsSimulator({ onExit }) {
         interests: 'Marketing Digital, Entrepreneurs, Auto-entrepreneurs' 
       },
       ad: { 
-        finalUrl: 'https://www.efp.be/formations', 
-        headlines: ['', '', ''], 
-        descriptions: ['', '', '', ''], 
+        finalUrl: 'https://www.votre-site.com', 
+        headlines: ['', '', '', '', ''], 
+        longHeadlines: ['', ''],
+        descriptions: ['', '', ''], 
         images: [], 
         logos: [], 
         videoUrl: '',
         path1: '', 
         path2: '',
+        businessName: '',
         callToAction: 'LEARN_MORE'
       }
     };
@@ -59,7 +62,16 @@ export default function GoogleAdsSimulator({ onExit }) {
     setView('dashboard');
   };
 
-  const updateDraft = (level, field, value) => setDraft(prev => ({ ...prev, [level]: { ...prev[level], [field]: value } }));
+  const updateDraft = (level: string, field: string, value: any) => {
+    setDraft(prev => {
+      const currentVal = prev[level][field];
+      const newValue = typeof value === 'function' ? value(currentVal) : value;
+      return { 
+        ...prev, 
+        [level]: { ...prev[level], [field]: newValue } 
+      };
+    });
+  };
 
   const handleExport = () => {
     let text = "EXPORT GOOGLE ADS - SIMULATION ETUDIANT\n";
@@ -71,7 +83,8 @@ export default function GoogleAdsSimulator({ onExit }) {
     text += `Réseaux : ${draft.settings.networks.search ? 'Recherche' : ''} ${draft.settings.networks.display ? '+ Display' : ''}\n`;
     text += `Budget : ${draft.settings.budget}€/jour\n`;
     text += `Enchère : ${draft.settings.bidding}\n`;
-    text += `Ciblage : ${draft.settings.location}\n\n`;
+    text += `Ciblage : ${draft.settings.location}\n`;
+    text += `Nom Commercial : ${draft.ad.businessName || 'Non défini'}\n\n`;
     
     text += "GROUPES D'ANNONCES & CIBLAGE\n";
     text += `${draft.adGroup.name}\n`;
@@ -79,23 +92,46 @@ export default function GoogleAdsSimulator({ onExit }) {
     text += "Mots-clés :\n";
     text += draft.adGroup.keywords + "\n\n";
 
-    text += "ANNONCE TEXTUELLE\n";
+    text += "ANNONCE\n";
     text += "Titres :\n";
     draft.ad.headlines.forEach((h, i) => { if(h) text += `- ${h}\n` });
+    if (draft.ad.longHeadlines) {
+      text += "Titres longs :\n";
+      draft.ad.longHeadlines.forEach((h, i) => { if(h) text += `- ${h}\n` });
+    }
     text += "Descriptions :\n";
     draft.ad.descriptions.forEach((d, i) => { if(d) text += `- ${d}\n` });
     text += `URL Finale : ${draft.ad.finalUrl}\n`;
+    if (draft.ad.path1) text += `Chemin d'affichage : /${draft.ad.path1}/${draft.ad.path2}\n`;
     
     text += "\n========================================\n";
     text += "Généré via le Simulateur de Digital Marketing";
 
-    const element = document.createElement("a");
-    const file = new Blob([text], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
-    element.download = `google_ads_export_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Export Google Ads</title></head>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; padding: 40px;">
+        <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">Export de Configuration Google Ads</h1>
+        <pre style="white-space: pre-wrap; font-size: 11pt; line-height: 1.5; color: #1e293b;">
+${text}
+        </pre>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `google_ads_export_${new Date().toISOString().split('T')[0]}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const nextStep = () => {
@@ -427,81 +463,284 @@ export default function GoogleAdsSimulator({ onExit }) {
                            <div className="flex-1 space-y-8 w-full">
                               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 space-y-10">
                                  <div className="space-y-3">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">URL finale</label>
-                                    <input type="text" value={draft.ad.finalUrl} onChange={e => updateDraft('ad', 'finalUrl', e.target.value)} className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-slate-200 font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                 </div>
+                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">URL finale</label>
+                                     <input 
+                                       type="text" 
+                                       value={draft.ad.finalUrl} 
+                                       onChange={e => updateDraft('ad', 'finalUrl', e.target.value)} 
+                                       className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-slate-200 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner" 
+                                       placeholder="https://www.votre-site.com"
+                                     />
+                                  </div>
 
-                                 {/* Dynamic form based on type */}
-                                 {['SEARCH', 'PMAX'].includes(draft.settings.type) && (
-                                   <>
-                                      <div className="space-y-6">
-                                         <div className="flex justify-between items-center">
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Titres (30 car. max)</label>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ajoutés : {draft.ad.headlines.filter(h => h).length}/15</span>
-                                         </div>
-                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {draft.ad.headlines.map((hl, i) => (
-                                              <div key={i} className="space-y-1">
-                                                <input 
-                                                  key={i} 
-                                                  type="text" 
-                                                  value={hl} 
-                                                  maxLength={30}
-                                                  onChange={e => { const h = [...draft.ad.headlines]; h[i] = e.target.value; updateDraft('ad', 'headlines', h); }} 
-                                                  className={`w-full px-6 py-4 rounded-2xl border font-bold focus:ring-2 focus:ring-blue-500 transition-all text-xs ${hl.length >= 30 ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-200'}`} 
-                                                  placeholder={`Titre ${i+1}`} 
-                                                />
-                                                <div className={`text-[9px] text-right font-black uppercase tracking-widest px-2 ${hl.length >= 30 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>{hl.length} / 30</div>
-                                              </div>
-                                            ))}
-                                            <button className="h-14 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 transition-all">+ Ajouter un titre</button>
-                                         </div>
-                                      </div>
+                                  {['DISPLAY', 'PMAX'].includes(draft.settings.type) && (
+                                    <div className="space-y-4">
+                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Nom de l'entreprise</label>
+                                       <input 
+                                         type="text" 
+                                         value={draft.ad.businessName} 
+                                         onChange={e => updateDraft('ad', 'businessName', e.target.value)} 
+                                         className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-inner" 
+                                         placeholder="Ex: EFP Formation"
+                                         maxLength={25}
+                                       />
+                                    </div>
+                                  )}
 
-                                      <div className="space-y-6">
-                                         <div className="flex justify-between items-center">
-                                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Descriptions (90 car. max)</label>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ajoutées : {draft.ad.descriptions.filter(d => d).length}/4</span>
-                                         </div>
-                                         <div className="space-y-4">
-                                            {draft.ad.descriptions.map((desc, i) => (
-                                               <div key={i} className="space-y-1">
-                                                 <textarea 
-                                                    value={desc} 
-                                                    maxLength={90}
-                                                    onChange={e => { const d = [...draft.ad.descriptions]; d[i] = e.target.value; updateDraft('ad', 'descriptions', d); }}
-                                                    className={`w-full h-24 p-6 rounded-3xl border font-bold focus:ring-2 focus:ring-blue-500 transition-all text-xs resize-none ${desc.length >= 90 ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-200'}`}
-                                                    placeholder={`Description ${i+1}`}
+                                  {/* Dynamic form based on type */}
+                                  {['SEARCH', 'PMAX'].includes(draft.settings.type) && (
+                                    <>
+                                       <div className="space-y-6">
+                                          <div className="flex justify-between items-center">
+                                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Titres (30 car. max)</label>
+                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ajoutés : {draft.ad.headlines.filter(h => h).length}/15</span>
+                                          </div>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                             {draft.ad.headlines.map((hl, i) => (
+                                               <div key={i} className="space-y-1 relative group">
+                                                  {draft.ad.headlines.length > 3 && (
+                                                    <button 
+                                                      onClick={() => updateDraft('ad', 'headlines', (prev: string[]) => prev.filter((_, idx) => idx !== i))}
+                                                      className="absolute -right-2 -top-2 w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10"
+                                                    >
+                                                      <X size={10} />
+                                                    </button>
+                                                  )}
+                                                 <input 
+                                                   type="text" 
+                                                   value={hl} 
+                                                   maxLength={30}
+                                                   onChange={e => {
+                                                     updateDraft('ad', 'headlines', (prev: string[]) => {
+                                                       const n = [...prev];
+                                                       n[i] = e.target.value;
+                                                       return n;
+                                                     });
+                                                   }} 
+                                                   className={`w-full px-6 py-4 rounded-2xl border font-bold focus:ring-2 focus:ring-blue-500 transition-all text-xs ${hl.length >= 30 ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-200'}`} 
+                                                   placeholder={`Titre ${i+1}`} 
                                                  />
-                                                 <div className="flex justify-between items-center px-4">
-                                                   <span className="text-[9px] font-bold text-slate-300">Minimum 2 recommandées</span>
-                                                   <div className={`text-[9px] font-black uppercase tracking-widest ${desc.length >= 90 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>{desc.length} / 90</div>
-                                                 </div>
+                                                 <div className={`text-[9px] text-right font-black uppercase tracking-widest px-2 ${hl.length >= 30 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>{hl.length} / 30</div>
                                                </div>
-                                            ))}
+                                             ))}
+                                             {draft.ad.headlines.length < 15 && (
+                                               <button 
+                                                 onClick={() => updateDraft('ad', 'headlines', (prev: string[]) => [...prev, ''])}
+                                                 className="h-14 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                                               >
+                                                 + Ajouter un titre
+                                               </button>
+                                             )}
+                                          </div>
+                                       </div>
+
+                                       {draft.settings.type === 'PMAX' && (
+                                         <div className="space-y-6">
+                                            <div className="flex justify-between items-center">
+                                               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Titres longs (90 car. max)</label>
+                                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ajoutés : {draft.ad.longHeadlines?.filter(h => h).length}/5</span>
+                                            </div>
+                                            <div className="space-y-4">
+                                               {draft.ad.longHeadlines?.map((hl, i) => (
+                                                 <div key={i} className="space-y-1 relative group">
+                                                    {draft.ad.longHeadlines.length > 1 && (
+                                                      <button 
+                                                        onClick={() => updateDraft('ad', 'longHeadlines', (prev: string[]) => prev.filter((_, idx) => idx !== i))}
+                                                        className="absolute -right-2 -top-2 w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10"
+                                                      >
+                                                        <X size={10} />
+                                                      </button>
+                                                    )}
+                                                    <input 
+                                                      type="text" 
+                                                      value={hl} 
+                                                      maxLength={90}
+                                                      onChange={e => {
+                                                        updateDraft('ad', 'longHeadlines', (prev: string[]) => {
+                                                          const n = [...prev];
+                                                          n[i] = e.target.value;
+                                                          return n;
+                                                        });
+                                                      }} 
+                                                      className={`w-full px-6 py-4 rounded-2xl border font-bold focus:ring-2 focus:ring-blue-500 transition-all text-xs ${hl.length >= 90 ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-200'}`} 
+                                                      placeholder={`Titre long ${i+1}`} 
+                                                    />
+                                                    <div className={`text-[9px] text-right font-black uppercase tracking-widest px-2 ${hl.length >= 90 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>{hl.length} / 90</div>
+                                                 </div>
+                                               ))}
+                                               {draft.ad.longHeadlines?.length < 5 && (
+                                                 <button 
+                                                   onClick={() => updateDraft('ad', 'longHeadlines', (prev: string[]) => [...prev, ''])}
+                                                   className="w-full h-14 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                                                 >
+                                                   + Ajouter un titre long
+                                                 </button>
+                                               )}
+                                            </div>
                                          </div>
-                                      </div>
-                                   </>
-                                 )}
+                                       )}
+
+                                       <div className="space-y-6">
+                                          <div className="flex justify-between items-center">
+                                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Descriptions (90 car. max)</label>
+                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ajoutées : {draft.ad.descriptions.filter(d => d).length}/4</span>
+                                          </div>
+                                          <div className="space-y-4">
+                                             {draft.ad.descriptions.map((desc, i) => (
+                                                <div key={i} className="space-y-1 relative group">
+                                                  {draft.ad.descriptions.length > 2 && (
+                                                    <button 
+                                                      onClick={() => updateDraft('ad', 'descriptions', (prev: string[]) => prev.filter((_, idx) => idx !== i))}
+                                                      className="absolute -right-2 -top-2 w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10"
+                                                    >
+                                                      <X size={10} />
+                                                    </button>
+                                                  )}
+                                                  <textarea 
+                                                     value={desc} 
+                                                     maxLength={90}
+                                                     onChange={e => {
+                                                        updateDraft('ad', 'descriptions', (prev: string[]) => {
+                                                           const n = [...prev];
+                                                           n[i] = e.target.value;
+                                                           return n;
+                                                        });
+                                                     }}
+                                                     className={`w-full h-24 p-6 rounded-3xl border font-bold focus:ring-2 focus:ring-blue-500 transition-all text-xs resize-none ${desc.length >= 90 ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-200'}`}
+                                                     placeholder={`Description ${i+1}`}
+                                                  />
+                                                  <div className="flex justify-between items-center px-4">
+                                                    <span className="text-[9px] font-bold text-slate-300">Minimum 2 recommandées</span>
+                                                    <div className={`text-[9px] font-black uppercase tracking-widest ${desc.length >= 90 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>{desc.length} / 90</div>
+                                                  </div>
+                                                </div>
+                                             ))}
+                                             {draft.ad.descriptions.length < 5 && (
+                                               <button 
+                                                 onClick={() => updateDraft('ad', 'descriptions', (prev: string[] = []) => [...prev, ''])}
+                                                 className="w-full h-14 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 transition-all mt-4"
+                                               >
+                                                 + Ajouter une description
+                                               </button>
+                                             )}
+                                          </div>
+                                       </div>
+                                    </>
+                                  )}
 
                                  {/* Display/PMax Images */}
                                  {['DISPLAY', 'PMAX', 'SALES'].includes(draft.settings.type) && (
                                     <div className="space-y-6">
-                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Images et Logos</label>
+                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Images (Ratio 1.91:1 et 1:1)</label>
                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                                          <div className="aspect-square bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all">
-                                             <ImageIcon size={24} className="text-slate-300 mb-2"/>
-                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Téléverser</span>
-                                          </div>
+                                          {draft.ad.images.map((img, i) => (
+                                            <div key={i} className="relative aspect-square rounded-3xl overflow-hidden border border-slate-200">
+                                              <img src={img} className="w-full h-full object-cover" alt={`Upload ${i}`} />
+                                              <button 
+                                                onClick={() => updateDraft('ad', 'images', draft.ad.images.filter((_, idx) => idx !== i))}
+                                                className="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full text-red-500 hover:bg-white"
+                                              >
+                                                <Trash size={14}/>
+                                              </button>
+                                            </div>
+                                          ))}
+                                          {draft.ad.images.length < 15 && (
+                                            <label className="aspect-square bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all">
+                                               <input 
+                                                 type="file" 
+                                                 accept="image/*" 
+                                                 className="hidden" 
+                                                 onChange={e => {
+                                                   const file = e.target.files?.[0];
+                                                   if (file) {
+                                                     const reader = new FileReader();
+                                                     reader.onloadend = () => updateDraft('ad', 'images', [...draft.ad.images, reader.result]);
+                                                     reader.readAsDataURL(file);
+                                                   }
+                                                 }}
+                                               />
+                                               <ImageIcon size={24} className="text-slate-300 mb-2"/>
+                                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Téléverser</span>
+                                            </label>
+                                          )}
                                        </div>
                                     </div>
                                  )}
 
+                                  {/* Logos Selection */}
+                                  {['DISPLAY', 'PMAX', 'SALES'].includes(draft.settings.type) && (
+                                     <div className="space-y-6">
+                                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Logos (Ratio 1:1 ou 4:1)</label>
+                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                           {draft.ad.logos?.map((logo, i) => (
+                                             <div key={i} className="relative aspect-square rounded-3xl overflow-hidden border border-slate-200 bg-slate-50 p-4">
+                                               <img src={logo} className="w-full h-full object-contain" alt={`Logo ${i}`} />
+                                               <button 
+                                                 onClick={() => updateDraft('ad', 'logos', (prev: string[]) => prev.filter((_, idx) => idx !== i))}
+                                                 className="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full text-red-500 hover:bg-white transition-colors"
+                                               >
+                                                 <Trash size={14}/>
+                                               </button>
+                                             </div>
+                                           ))}
+                                           {draft.ad.logos?.length < 5 && (
+                                             <label className="aspect-square bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all">
+                                                <input 
+                                                  type="file" 
+                                                  accept="image/*" 
+                                                  className="hidden" 
+                                                  onChange={e => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                      const reader = new FileReader();
+                                                      reader.onloadend = () => updateDraft('ad', 'logos', (prev: string[]) => [...prev, reader.result]);
+                                                      reader.readAsDataURL(file);
+                                                    }
+                                                  }}
+                                                />
+                                                <Megaphone size={24} className="text-slate-300 mb-2"/>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logo</span>
+                                             </label>
+                                           )}
+                                        </div>
+                                     </div>
+                                  )}
+
                                  {/* Video selection */}
                                  {['VIDEO', 'PMAX'].includes(draft.settings.type) && (
-                                    <div className="space-y-3">
-                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Lien Vidéo YouTube</label>
-                                       <input type="text" value={draft.ad.videoUrl} onChange={e => updateDraft('ad', 'videoUrl', e.target.value)} className="w-full px-6 py-4 bg-slate-50 rounded-2xl border border-slate-200 font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:font-medium" placeholder="https://youtube.com/watch?v=..." />
+                                    <div className="space-y-6 text-xs">
+                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Vidéo (Fichier ou URL)</label>
+                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <label className="aspect-video bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all">
+                                             <input 
+                                                type="file" 
+                                                accept="video/*" 
+                                                className="hidden" 
+                                                onChange={e => {
+                                                   const file = e.target.files?.[0];
+                                                   if (file) {
+                                                      const reader = new FileReader();
+                                                      reader.onloadend = () => updateDraft('ad', 'videoUrl', reader.result);
+                                                      reader.readAsDataURL(file);
+                                                   }
+                                                }}
+                                             />
+                                             {draft.ad.videoUrl && draft.ad.videoUrl.startsWith('data:video') ? (
+                                                <video src={draft.ad.videoUrl} className="w-full h-full object-cover rounded-3xl" />
+                                             ) : (
+                                                <><Play size={24} className="text-slate-300 mb-2"/><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Téléverser Vidéo</span></>
+                                             )}
+                                          </label>
+                                          <div className="space-y-4">
+                                             <div className="relative group">
+                                                <Play size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <input type="text" value={draft.ad.videoUrl && !draft.ad.videoUrl.startsWith('data:video') ? draft.ad.videoUrl : ''} onChange={e => updateDraft('ad', 'videoUrl', e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold shadow-inner" placeholder="Ou lien YouTube..." />
+                                             </div>
+                                             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                                                <p className="text-[9px] text-blue-700 font-bold uppercase leading-relaxed">Simulateur : Le téléchargement direct permet un aperçu immédiat sans quitter l'outil.</p>
+                                             </div>
+                                          </div>
+                                       </div>
                                     </div>
                                  )}
                               </div>
@@ -520,7 +759,10 @@ export default function GoogleAdsSimulator({ onExit }) {
                                           <div className="px-2 py-0.5 bg-blue-500 text-white rounded font-black text-[9px] uppercase tracking-widest shadow-lg shadow-blue-500/20">Annonce</div>
                                        </div>
                                        <div className="space-y-4">
-                                          <div className="text-xs text-slate-500 font-bold tracking-tight uppercase">{draft.ad.finalUrl ? new URL(draft.ad.finalUrl).hostname : 'www.votre-site.com'}</div>
+                                          <div className="text-xs text-slate-500 font-bold tracking-tight uppercase flex items-center gap-1">
+                                             {draft.ad.finalUrl ? new URL(draft.ad.finalUrl.startsWith('http') ? draft.ad.finalUrl : `https://${draft.ad.finalUrl}`).hostname : 'www.votre-site.com'}
+                                             {(draft.ad.path1 || draft.ad.path2) && <span className="text-slate-700">/ {draft.ad.path1} / {draft.ad.path2}</span>}
+                                          </div>
                                           <div className="text-2xl font-black text-blue-400 leading-tight tracking-tight hover:underline cursor-pointer">
                                              {draft.ad.headlines.filter(h => h).slice(0, 2).join(' | ') || 'Votre Titre Accrocheur Ici'}
                                           </div>
@@ -531,12 +773,48 @@ export default function GoogleAdsSimulator({ onExit }) {
                                     </div>
                                  )}
 
-                                 {/* Display/PMax Preview Placeholder */}
-                                 {draft.settings.type !== 'SEARCH' && (
-                                    <div className="animate-in zoom-in-95 duration-500 flex flex-col items-center justify-center min-h-[300px] text-center">
-                                       <div className="w-20 h-20 bg-slate-800 rounded-3xl flex items-center justify-center mb-6 text-slate-600"><Eye size={32}/></div>
-                                       <h4 className="text-white font-black uppercase tracking-widest mb-3">Aperçu Visuel</h4>
-                                       <p className="text-slate-500 text-xs font-medium leading-relaxed max-w-[200px]">En fonction de vos visuels et textes, Google optimisera le format d'affichage sur son réseau.</p>
+                                 {/* Display/PMax Preview */}
+                                 {['DISPLAY', 'PMAX'].includes(draft.settings.type) && (
+                                    <div className="animate-in zoom-in-95 duration-500 flex flex-col w-full">
+                                       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mb-6">
+                                          <div className="p-4 flex items-center justify-between border-b border-slate-50">
+                                             <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] uppercase tracking-tight">
+                                                <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center p-1">
+                                                   {draft.ad.logos?.[0] ? <img src={draft.ad.logos[0]} className="w-full h-full object-contain" /> : <ImageIcon size={12} className="text-slate-300" />}
+                                                </div>
+                                                {draft.ad.businessName || 'Entreprise'}
+                                             </div>
+                                             <ExternalLink size={12} className="text-slate-400"/>
+                                          </div>
+                                          <div className="aspect-video bg-slate-100 relative group overflow-hidden">
+                                             {draft.ad.images[0] ? <img src={draft.ad.images[0]} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-slate-300"><ImageIcon size={48}/><span className="text-[10px] mt-2 font-black uppercase">Visuel Ad</span></div>}
+                                             <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                                                <div className="text-white text-sm font-black uppercase tracking-tight mb-1">{draft.ad.headlines[0] || 'Titre Accrocheur'}</div>
+                                                <div className="text-white/70 text-[10px] font-bold line-clamp-2">{draft.ad.longHeadlines?.[0] || draft.ad.descriptions[0] || 'Votre description de campagne...'}</div>
+                                             </div>
+                                          </div>
+                                       </div>
+                                       <div className="text-center">
+                                          <h4 className="text-white font-black uppercase tracking-widest mb-3">Aperçu Réseau Display / PMax</h4>
+                                          <p className="text-slate-500 text-xs font-medium leading-relaxed">Google générera dynamiquement des milliers de combinaisons basées sur vos ressources.</p>
+                                       </div>
+                                    </div>
+                                 )}
+
+                                 {/* Video Preview */}
+                                 {draft.settings.type === 'VIDEO' && (
+                                    <div className="animate-in zoom-in-95 duration-500 flex flex-col w-full text-center">
+                                       <div className="aspect-video bg-slate-800 rounded-3xl overflow-hidden mb-6 relative shadow-2xl border border-slate-700">
+                                          {draft.ad.videoUrl ? (
+                                             draft.ad.videoUrl.startsWith('data:video') ? (
+                                               <video src={draft.ad.videoUrl} autoPlay loop muted className="w-full h-full object-cover" />
+                                             ) : (
+                                               <div className="w-full h-full flex items-center justify-center text-white text-[10px] font-black uppercase">Source externe : {draft.ad.videoUrl.substring(0, 30)}...</div>
+                                             )
+                                          ) : <div className="w-full h-full flex items-center justify-center text-slate-600"><PlayCircle size={48} /></div>}
+                                       </div>
+                                       <h4 className="text-white font-black uppercase tracking-widest mb-2">Aperçu YouTube Ad</h4>
+                                       <p className="text-slate-500 text-xs font-medium">{draft.ad.headlines[0]}</p>
                                     </div>
                                  )}
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
 import { 
   Layout, Megaphone, Users, CreditCard, Plus, Search, X, 
   ChevronRight, Image as ImageIcon, MoreVertical, Folder, 
@@ -148,13 +149,31 @@ export default function MetaAdsSimulator({ onExit }) {
     text += "\n======================================\n";
     text += "Généré via le Simulateur de Digital Marketing";
 
-    const element = document.createElement("a");
-    const file = new Blob([text], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
-    element.download = `meta_ads_export_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Export Meta Ads</title></head>
+      <body style="font-family: 'Segoe UI', Arial, sans-serif; padding: 40px;">
+        <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">Export de Configuration Meta Ads</h1>
+        <pre style="white-space: pre-wrap; font-size: 11pt; line-height: 1.5; color: #1e293b;">
+${text}
+        </pre>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meta_ads_export_${new Date().toISOString().split('T')[0]}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -973,11 +992,35 @@ function AdForm({ draft, updateDraft }) {
                      </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">URL de la vidéo Mock / YouTube</label>
-                    <div className="relative group">
-                       <Play size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
-                       <input type="text" value={draft.ad.videoUrl} onChange={(e) => updateDraft('ad', 'videoUrl', e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold shadow-inner" placeholder="Entrez le lien de votre vidéo publicitaire..." />
+                  <div className="space-y-6">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Source Vidéo</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4 col-span-2">
+                           <label className="text-[10px] font-bold text-slate-400 uppercase ml-2">Télécharger la vidéo</label>
+                           <label className="w-full aspect-video border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all group relative overflow-hidden bg-slate-50 shadow-inner">
+                              <input 
+                                type="file" 
+                                accept="video/*" 
+                                className="hidden" 
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => updateDraft('ad', 'videoUrl', reader.result);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }} 
+                              />
+                              {draft.ad.videoUrl && draft.ad.videoUrl.startsWith('data:video') ? (
+                                <video src={draft.ad.videoUrl} className="w-full h-full object-cover" />
+                              ) : (
+                                <><Play className="text-slate-200 mb-2 group-hover:scale-110 transition-transform" size={40}/><span className="text-[10px] font-bold text-slate-400">Cliquez pour importer la vidéo</span></>
+                              )}
+                           </label>
+                           <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 mt-2">
+                              <p className="text-[9px] text-blue-700 font-bold leading-relaxed uppercase tracking-tight">Le téléchargement direct est obligatoire pour ce laboratoire.</p>
+                           </div>
+                        </div>
                     </div>
                   </div>
                 )}
@@ -1108,11 +1151,18 @@ function AdForm({ draft, updateDraft }) {
                     (previewPlacement === 'STORY' ? draft.ad.media.stories : draft.ad.media.feeds) ? 
                       <img src={previewPlacement === 'STORY' ? draft.ad.media.stories : draft.ad.media.feeds} className="w-full h-full object-cover animate-in fade-in duration-700" alt="Preview"/> : 
                       <div className="text-center p-8"><ImageIcon size={48} className="text-slate-200 mx-auto mb-4" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Aucun visuel {previewPlacement === 'STORY' ? '9:16' : '1:1'}</span></div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                       {draft.ad.videoUrl ? <div className="text-white text-xs font-black uppercase tracking-widest"><Play size={40} className="mx-auto mb-4 text-blue-500"/>Lecture Mock Vidéo</div> : <div className="text-slate-700"><Play size={32}/></div>}
-                    </div>
-                  )
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center bg-slate-900 border-x border-slate-800">
+                        {draft.ad.videoUrl ? (
+                          <video src={draft.ad.videoUrl} autoPlay loop muted className="w-full h-full object-cover shadow-2xl" />
+                        ) : (
+                          <div className="text-center">
+                            <Play size={40} className="text-slate-700 mx-auto mb-2 opacity-20"/>
+                            <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">En attente de vidéo</span>
+                          </div>
+                        )}
+                     </div>
+                   )
                 ) : (
                   <div className="w-full h-full relative overflow-hidden">
                      <div className="absolute inset-0 flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
