@@ -29,11 +29,23 @@ export default function MetaAdsSimulator({ onExit }) {
   const [currentStep, setCurrentStep] = useState('campaign');
 
   function getInitialDraft(objective = 'TRAFFIC') {
+    const today = new Date();
+    const nextMonth = new Date();
+    nextMonth.setMonth(today.getMonth() + 1);
+    
     return {
       campaign: { name: 'Nouvelle campagne', objective: objective, specialCategory: 'NONE' },
       adSet: { 
         name: 'Nouvel ensemble de publicités', 
         budgetType: 'DAILY', budget: 20, 
+        startDate: today.toISOString().split('T')[0],
+        startTime: '09:00',
+        endDate: nextMonth.toISOString().split('T')[0],
+        endTime: '23:59',
+        conversionLocation: 'WEBSITE',
+        performanceGoal: 'MAX_CONVERSIONS',
+        pixel: 'Pixel de Amandine Vanderbecq',
+        conversionEvent: 'VIEW_CONTENT',
         audienceMode: 'ADVANTAGE_PLUS', // ADVANTAGE_PLUS or TRADITIONAL
         locations: 'Belgique', ageMin: '18', ageMax: '65+', detailedTargeting: '',
         customAudiences: '',
@@ -42,7 +54,7 @@ export default function MetaAdsSimulator({ onExit }) {
         placements: 'ADVANTAGE', manualPlacements: { facebook: true, instagram: true, audienceNetwork: true, messenger: true } 
       },
       ad: { 
-        name: 'Nouvelle publicité', adSetup: 'CREATE', format: 'SINGLE_IMAGE', primaryText: '', headline: '', callToAction: 'LEARN_MORE', 
+        adSetup: 'CREATE', format: 'SINGLE_IMAGE', primaryText: '', headline: '', callToAction: 'LEARN_MORE', 
         url: '', urlParameters: '', pixelActive: false, 
         facebookPage: 'Les Licornes du Marketing 🦄', 
         instagramAccount: 'Utiliser la page sélectionnée', 
@@ -96,6 +108,14 @@ export default function MetaAdsSimulator({ onExit }) {
       budget: `${draft.adSet.budget},00 € / ${draft.adSet.budgetType === 'DAILY' ? 'jour' : 'global'}`,
       amountSpent: '0,00 €', results: '-', reach: '-', impressions: '-', cpc: '-', landingPageViews: '-', postReactions: '-', postComments: '-', postSaves: '-', postShares: '-', engagementRate: '-', instantExpOpen: '-', instantExpStart: '-', trafficGoogle: '-', purchases: '-', objective: draft.campaign.objective
     };
+
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#2563eb', '#10b981', '#ffffff']
+    });
+
     setCampaigns([newCampaign, ...campaigns]);
     setView('dashboard');
   };
@@ -128,6 +148,11 @@ export default function MetaAdsSimulator({ onExit }) {
     text += "ENSEMBLE DE PUBLICITÉS\n";
     text += `Nom : ${draft.adSet.name}\n`;
     text += `Budget : ${draft.adSet.budget}€ (${draft.adSet.budgetType})\n`;
+    text += `Calendrier : Du ${draft.adSet.startDate} ${draft.adSet.startTime} au ${draft.adSet.endDate} ${draft.adSet.endTime}\n`;
+    text += `Lieu de conversion : ${draft.adSet.conversionLocation}\n`;
+    text += `Objectif de performance : ${draft.adSet.performanceGoal}\n`;
+    text += `Pixel : ${draft.adSet.pixel}\n`;
+    text += `Événement : ${draft.adSet.conversionEvent}\n`;
     text += `Mode Audience : ${draft.adSet.audienceMode === 'ADVANTAGE_PLUS' ? 'Advantage+' : 'Traditionnel'}\n`;
     if (draft.adSet.audienceMode === 'ADVANTAGE_PLUS') {
       text += `Suggestions de ciblage : ${draft.adSet.detailedTargeting || 'Aucune'}\n`;
@@ -441,8 +466,11 @@ function CampaignForm({ draft, updateDraft }) {
       <div className="space-y-10">
         <div className="space-y-4">
           <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Nom de la campagne</label>
-          <input type="text" value={draft.campaign.name} onChange={(e) => updateDraft('campaign', 'name', e.target.value)} className="w-full text-xl font-bold bg-slate-50/50 px-6 py-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" />
-          <div className="flex items-center gap-3 px-1">
+          <div className="flex flex-col gap-2">
+            <input type="text" value={draft.campaign.name} onChange={(e) => updateDraft('campaign', 'name', e.target.value)} className="w-full text-xl font-bold bg-slate-50/50 px-6 py-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" placeholder="Ex: Campagne de Soldes d'Hiver 2024" />
+            <p className="text-[10px] text-slate-400 font-medium px-2 italic">Choisissez un nom précis pour identifier facilement votre campagne (ex: Nom du produit + Saison + Objectif).</p>
+          </div>
+          <div className="flex items-center gap-3 px-1 mt-4">
              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Objectif sélectionné :</span>
              <select 
                value={draft.campaign.objective}
@@ -492,14 +520,14 @@ function AdSetForm({ draft, updateDraft, createdAudiences }) {
           <div className="flex items-center justify-between mb-10 border-b border-slate-50 pb-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600"><Layout size={28}/></div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-widest">Configuration de l'ensemble</h2>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-widest">Configuration de l'ensemble de publicités</h2>
             </div>
           </div>
           
           <div className="space-y-10">
             <div className="space-y-4">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Nom de l'ensemble</label>
-              <input type="text" value={draft.adSet.name} onChange={(e) => updateDraft('adSet', 'name', e.target.value)} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none shadow-inner focus:ring-2 focus:ring-blue-500 font-bold" />
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Nom de l'ensemble de publicités (Ad Set) - Soyez précis (ex: Audience_FR_18-35)</label>
+              <input type="text" value={draft.adSet.name} onChange={(e) => updateDraft('adSet', 'name', e.target.value)} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none shadow-inner focus:ring-2 focus:ring-blue-500 font-bold" placeholder="Ex: Audience 18-35 ans - Retargeting" />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -518,36 +546,147 @@ function AdSetForm({ draft, updateDraft, createdAudiences }) {
                 </div>
               </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-slate-50 pt-10">
+              <div className="space-y-4">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Date et heure de début</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={draft.adSet.startDate} onChange={(e) => updateDraft('adSet', 'startDate', e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold" title="Sélectionnez la date de début" />
+                  <input type="time" value={draft.adSet.startTime} onChange={(e) => updateDraft('adSet', 'startTime', e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold" title="Sélectionnez l'heure de début" />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Date et heure de fin</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={draft.adSet.endDate} onChange={(e) => updateDraft('adSet', 'endDate', e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold" title="Sélectionnez la date de fin" />
+                  <input type="time" value={draft.adSet.endTime} onChange={(e) => updateDraft('adSet', 'endTime', e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold" title="Sélectionnez l'heure de fin" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-10">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-              <Users size={18} className="text-blue-600"/> Ciblage de l'audience
-            </h3>
-            <div className="flex gap-4">
-              <select className="px-4 py-2 bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none border-none cursor-pointer">
-                <option>Utiliser une audience créée...</option>
-                {createdAudiences.map(aud => (
-                  <option key={aud.id}>{aud.name}</option>
+          <div className="flex items-center gap-3 mb-10 border-b border-slate-50 pb-8">
+            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 font-bold">
+              <Plus size={24} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-widest">Conversion</h2>
+          </div>
+
+          <div className="space-y-10">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Lieu de conversion</label>
+                <AlertCircle size={14} className="text-slate-300" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { id: 'WEBSITE', label: 'Site web', desc: 'Envoyez du trafic vers votre site web.' },
+                  { id: 'APP', label: 'Application', desc: 'Envoyez du trafic vers votre application.' },
+                  { id: 'MESSAGING', label: 'Messenger, IG et WhatsApp', desc: 'Envoyer du trafic vers vos messageries.' },
+                  { id: 'RESEAUX', label: 'Page Instagram ou FB', desc: 'Envoyer vers votre profil/page.' },
+                  { id: 'CALLS', label: 'Appels', desc: 'Incitez aux appels.' }
+                ].map(loc => (
+                  <div 
+                    key={loc.id}
+                    onClick={() => updateDraft('adSet', 'conversionLocation', loc.id)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${draft.adSet.conversionLocation === loc.id ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <input type="radio" checked={draft.adSet.conversionLocation === loc.id} readOnly className="w-3 h-3 accent-blue-600" />
+                      <span className="text-[10px] font-black uppercase tracking-tight text-slate-900">{loc.label}</span>
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-bold leading-tight">{loc.desc}</p>
+                  </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-6 border-t border-slate-50">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Objectif de performance</label>
+                  <AlertCircle size={14} className="text-slate-300" />
+                </div>
+                <select 
+                  value={draft.adSet.performanceGoal} 
+                  onChange={(e) => updateDraft('adSet', 'performanceGoal', e.target.value)}
+                  className="w-full px-6 py-4 border border-slate-200 rounded-2xl outline-none bg-slate-50 font-bold shadow-inner cursor-pointer"
+                >
+                  <option value="MAX_CONVERSIONS">Maximiser le nombre de conversions</option>
+                  <option value="MAX_VALUE">Maximiser la valeur des conversions</option>
+                  <option value="MAX_CLICKS">Maximiser le nombre de clics sur un lien</option>
+                </select>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">* Dataset (Pixel)</label>
+                  <AlertCircle size={14} className="text-slate-300" />
+                </div>
+                <select 
+                  value={draft.adSet.pixel} 
+                  onChange={(e) => updateDraft('adSet', 'pixel', e.target.value)}
+                  className="w-full px-6 py-4 border border-slate-200 rounded-2xl outline-none bg-slate-50 font-bold shadow-inner cursor-pointer"
+                >
+                  <option value="Pixel de Amandine Vanderbecq">Pixel de Amandine Vanderbecq</option>
+                  <option value="Pixel de l'école">Pixel de l'école (Sandbox)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-6 border-t border-slate-50">
+              <div className="flex items-center gap-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">* Événement de conversion</label>
+                <AlertCircle size={14} className="text-slate-300" />
+              </div>
+              <select 
+                value={draft.adSet.conversionEvent} 
+                onChange={(e) => updateDraft('adSet', 'conversionEvent', e.target.value)}
+                className="w-full px-6 py-4 border border-slate-200 rounded-2xl outline-none bg-slate-50 font-bold shadow-inner cursor-pointer"
+              >
+                <option value="VIEW_CONTENT">Vue de contenu (ViewContent)</option>
+                <option value="ADD_TO_CART">Ajout au panier (AddToCart)</option>
+                <option value="INITIATE_CHECKOUT">Initialisation du paiement</option>
+                <option value="PURCHASE">Achat (Purchase)</option>
+                <option value="LEAD">Prospect (Lead)</option>
+                <option value="CONTACT">Contact</option>
               </select>
-              {draft.adSet.audienceMode === 'ADVANTAGE_PLUS' ? (
-                <button 
-                  onClick={() => updateDraft('adSet', 'audienceMode', 'TRADITIONAL')}
-                  className="text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest"
-                >
-                  Options d'origine
-                </button>
-              ) : (
-                <button 
-                  onClick={() => updateDraft('adSet', 'audienceMode', 'ADVANTAGE_PLUS')}
-                  className="text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest"
-                >
-                  Advantage+
-                </button>
-              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-10">
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <Users size={18} className="text-blue-600"/> Ciblage de l'audience
+              </h3>
+              <div className="flex gap-4">
+                {draft.adSet.audienceMode === 'ADVANTAGE_PLUS' ? (
+                  <button 
+                    onClick={() => updateDraft('adSet', 'audienceMode', 'TRADITIONAL')}
+                    className="text-[10px] font-black text-blue-600 hover:bg-blue-100 uppercase tracking-widest border border-blue-200 px-4 py-2 rounded-lg transition-all"
+                  >
+                    Passer aux options d'audiences originales
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => updateDraft('adSet', 'audienceMode', 'ADVANTAGE_PLUS')}
+                    className="text-[10px] font-black text-white bg-blue-600 px-6 py-2 rounded-xl uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
+                  >
+                    Utiliser l'audience Advantage+ (Recommandé)
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-4">
+               <AlertCircle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+               <p className="text-[11px] text-amber-900 font-medium leading-relaxed">
+                 <span className="font-bold underline uppercase block mb-1">Important pour votre stratégie :</span>
+                 Utilisez <b>Advantage+</b> pour laisser l'IA de Meta trouver vos clients. Le mode <b>Manuel</b> vous permet d'utiliser vos propres <b>Audiences Personnalisées, Similaires ou Enregistrées</b> pour affiner votre ciblage étape par étape.
+               </p>
             </div>
           </div>
 
@@ -588,21 +727,57 @@ function AdSetForm({ draft, updateDraft, createdAudiences }) {
             </div>
           ) : (
             <div className="space-y-8 animate-in fade-in slide-in-from-top-2">
-              <div className="flex border-b border-slate-100">
+              <div className="flex border-b border-slate-100 mb-6">
                 {[
-                  { id: 'CUSTOM', label: 'Personnalisée' },
-                  { id: 'LOOKALIKE', label: 'Semblable' },
-                  { id: 'SAVED', label: 'Sauvegardée' }
+                  { id: 'CUSTOM', label: 'Audience Personnalisée', desc: 'Retargeting' },
+                  { id: 'LOOKALIKE', label: 'Audience Similaire', desc: 'Lookalike (LAL)' },
+                  { id: 'SAVED', label: 'Audience Enregistrée', desc: 'Ciblage Déterminé' }
                 ].map(tab => (
                   <button 
                     key={tab.id}
                     onClick={() => setTraditionalTab(tab.id)}
-                    className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all relative ${traditionalTab === tab.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`flex-1 px-4 py-4 text-[10px] font-black uppercase tracking-widest transition-all relative border-r last:border-r-0 border-slate-50 ${traditionalTab === tab.id ? 'text-blue-600 bg-blue-50/30' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
                   >
-                    {tab.label}
-                    {traditionalTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>}
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{tab.label}</span>
+                      <span className="text-[8px] font-bold text-slate-400 lowercase italic">{tab.desc}</span>
+                    </div>
+                    {traditionalTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"></div>}
                   </button>
                 ))}
+              </div>
+
+              <div className="mb-8">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-4">Utiliser une audience enregistrée</label>
+                <div className="relative group">
+                   <select 
+                     className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none shadow-inner focus:ring-2 focus:ring-blue-500 font-bold cursor-pointer"
+                     onChange={(e) => {
+                       const aud = createdAudiences.find(a => a.name === e.target.value);
+                       if (aud) {
+                         if (aud.type === 'SAVED') {
+                            updateDraft('adSet', 'locations', aud.locations);
+                            updateDraft('adSet', 'ageMin', aud.ageMin);
+                            updateDraft('adSet', 'ageMax', aud.ageMax);
+                            updateDraft('adSet', 'detailedTargeting', aud.interests);
+                            setTraditionalTab('SAVED');
+                         } else if (aud.type === 'CUSTOM') {
+                            updateDraft('adSet', 'customAudienceSource', aud.source);
+                            setTraditionalTab('CUSTOM');
+                         } else if (aud.type === 'LOOKALIKE') {
+                            updateDraft('adSet', 'lookalikePercentage', aud.ratio);
+                            setTraditionalTab('LOOKALIKE');
+                         }
+                       }
+                     }}
+                   >
+                     <option value="">Rechercher une audience existante...</option>
+                     {createdAudiences.map(aud => (
+                       <option key={aud.id} value={aud.name}>{aud.name} ({aud.type})</option>
+                     ))}
+                   </select>
+                   <Search size={16} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                </div>
               </div>
 
               {traditionalTab === 'SAVED' && (
@@ -870,7 +1045,8 @@ function AdForm({ draft, updateDraft }) {
   };
 
   const addCarouselCard = () => {
-    const newCard = { id: Date.now(), image: '', headline: 'Nouveau titre', description: '', url: '' };
+    if (draft.ad.carouselCards.length >= 5) return;
+    const newCard = { id: Date.now(), image: '', headline: `Carte ${draft.ad.carouselCards.length + 1}`, description: '', url: '' };
     updateDraft('ad', 'carouselCards', [...draft.ad.carouselCards, newCard]);
   };
 
@@ -909,20 +1085,10 @@ function AdForm({ draft, updateDraft }) {
         <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-10">
           <div className="flex items-center gap-3 mb-10 border-b border-slate-50 pb-8">
             <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600"><Edit size={28}/></div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-widest">Identité & Format</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-widest">Publicité</h2>
           </div>
           
           <div className="space-y-10">
-            <div className="space-y-4">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Nom de la campagne (Rappel)</label>
-              <input type="text" value={draft.campaign.name} onChange={(e) => updateDraft('campaign', 'name', e.target.value)} className="w-full px-6 py-4 border border-slate-200 rounded-2xl outline-none bg-slate-50 font-bold shadow-inner focus:ring-2 focus:ring-blue-500 transition-all" />
-            </div>
-
-            <div className="space-y-4">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Nom de la publicité</label>
-              <input type="text" value={draft.ad.name} onChange={(e) => updateDraft('ad', 'name', e.target.value)} className="w-full px-6 py-4 border border-slate-200 rounded-2xl outline-none bg-slate-50 font-bold shadow-inner focus:ring-2 focus:ring-blue-500 transition-all" />
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Page Facebook</label>
@@ -935,6 +1101,47 @@ function AdForm({ draft, updateDraft }) {
                 <select value={draft.ad.instagramAccount} onChange={(e) => updateDraft('ad', 'instagramAccount', e.target.value)} className="w-full px-6 py-4 border border-slate-200 rounded-2xl outline-none bg-slate-50 font-bold shadow-inner cursor-pointer">
                   {instagramAccounts.map(acc => <option key={acc} value={acc}>{acc}</option>)}
                 </select>
+              </div>
+            </div>
+
+            <div className="bg-blue-50/50 rounded-[2rem] shadow-sm border border-blue-100 p-10">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <Link size={18} className="text-blue-600"/> Destination
+                </h3>
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-tight">
+                   Note : Paramètres UTM obligatoires
+                </div>
+              </div>
+              <div className="space-y-6">
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed italic">Indiquez l'URL finale de votre site. N'oubliez pas d'ajouter vos tags UTM pour le suivi dans Google Analytics.</p>
+                
+                <div className="space-y-4">
+                  <div className="space-y-4 pt-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1">
+                      * URL du site web <AlertCircle size={14} className="text-slate-300" />
+                    </label>
+                    <input 
+                      type="text" 
+                      value={draft.ad.url} 
+                      onChange={(e) => updateDraft('ad', 'url', e.target.value)} 
+                      className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none font-mono text-xs font-bold shadow-sm focus:ring-2 focus:ring-blue-500 transition-all" 
+                      placeholder="https://www.votre-site.com/offre?utm_source=facebook&utm_medium=paid" 
+                    />
+                    
+                    <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-start gap-4 shadow-sm">
+                      <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+                        <Calculator size={16} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-700 leading-relaxed uppercase tracking-tight">
+                          💡 Conseil : Utilisez des UTM pour identifier la source du trafic.
+                        </p>
+                        <p className="text-[9px] text-slate-400 mt-1 italic">Exemple : ?utm_source=meta&utm_medium=ads&utm_campaign={draft.campaign.name.toLowerCase().replace(/ /g, '_')}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1030,8 +1237,15 @@ function AdForm({ draft, updateDraft }) {
             {draft.ad.format === 'CAROUSEL' && (
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cartes du carrousel ({draft.ad.carouselCards.length}/10)</h4>
-                   <button onClick={addCarouselCard} className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"><Plus size={14}/> Ajouter une carte</button>
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cartes du carrousel ({draft.ad.carouselCards.length}/5)</h4>
+                   {draft.ad.carouselCards.length < 5 && (
+                     <button 
+                       onClick={addCarouselCard} 
+                       className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline transition-all hover:scale-105 active:scale-95"
+                     >
+                       <Plus size={14}/> Ajouter une carte
+                     </button>
+                   )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {draft.ad.carouselCards.map((card, idx) => (
@@ -1079,17 +1293,26 @@ function AdForm({ draft, updateDraft }) {
         </div>
 
         <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-10">
-          <h3 className="text-sm font-black text-slate-900 mb-8 uppercase tracking-widest">Destination</h3>
+          <h3 className="text-sm font-black text-slate-900 mb-8 uppercase tracking-widest flex items-center gap-2">
+            <BarChart3 size={18} className="text-blue-600"/> Suivi (Tracking)
+          </h3>
           <div className="space-y-8">
             <div className="space-y-4">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">URL de destination</label>
-              <input type="text" value={draft.ad.url} onChange={(e) => updateDraft('ad', 'url', e.target.value)} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-mono text-xs font-bold" placeholder="https://www.monsite.com/nos-offres" />
+               <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Paramètres d'URL (UTM)</label>
+               <textarea 
+                 value={draft.ad.urlParameters} 
+                 onChange={(e) => updateDraft('ad', 'urlParameters', e.target.value)}
+                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-[11px] font-bold shadow-inner min-h-[80px]" 
+                 placeholder="utm_source={{site_source_name}}&utm_campaign={{campaign.name}}&utm_content={{ad.name}}"
+               />
+               <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Astuce : Utilisez les balises dynamiques {"{{ }}"} pour automatiser le suivi.</p>
             </div>
-            <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-200 shadow-inner">
-               <input type="checkbox" checked={draft.ad.pixelActive} onChange={(e) => updateDraft('ad', 'pixelActive', e.target.checked)} className="w-6 h-6 rounded border-slate-300 text-blue-600 accent-blue-600 cursor-pointer" />
+
+            <div className="flex items-center gap-6 p-6 bg-slate-900 rounded-3xl border border-slate-800 shadow-xl">
+               <input type="checkbox" checked={draft.ad.pixelActive} onChange={(e) => updateDraft('ad', 'pixelActive', e.target.checked)} className="w-6 h-6 rounded border-slate-600 text-blue-600 accent-blue-600 cursor-pointer" />
                <div className="flex flex-col">
-                 <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Suivi des conversions (Pixel)</span>
-                 <span className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">ID Actif : META_PIXEL_X742 (Dernier signal : il y a 2 min)</span>
+                 <span className="text-xs font-black text-white uppercase tracking-widest">Événements de site web (Pixel)</span>
+                 <span className="text-[10px] text-blue-400 font-bold mt-1 uppercase tracking-tighter">Statut : Connecté • Signal actif</span>
                </div>
             </div>
           </div>
@@ -1181,9 +1404,19 @@ function AdForm({ draft, updateDraft }) {
              {/* Footer / CTA Section */}
              <div className="px-5 py-5 bg-slate-50/80 backdrop-blur-sm flex items-center justify-between border-t border-slate-100">
                 <div className="flex-1 min-w-0 pr-4">
-                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] truncate w-full">
-                      {(draft.ad.url ? new URL(draft.ad.url.startsWith('http') ? draft.ad.url : `https://${draft.ad.url}`).hostname : 'WWW.SITE-WEB.COM').toUpperCase()}
-                   </div>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] truncate w-full">
+                 {(() => {
+                   try {
+                     const urlString = draft.ad.url;
+                     if (!urlString) return 'WWW.SITE-WEB.COM';
+                     const formattedUrl = urlString.startsWith('http') ? urlString : `https://${urlString}`;
+                     const url = new URL(formattedUrl);
+                     return url.hostname.toUpperCase();
+                   } catch (e) {
+                     return 'WWW.SITE-WEB.COM';
+                   }
+                 })()}
+              </div>
                    <div className="text-sm font-black text-slate-900 truncate tracking-tight mt-1">
                       {draft.ad.format === 'CAROUSEL' ? draft.ad.carouselCards[carouselIndex]?.headline : (draft.ad.headline || 'Titre de l\'accroche')}
                    </div>

@@ -50,6 +50,14 @@ export default function GoogleAdsSimulator({ onExit }) {
 
   const handlePublish = () => {
     const typeLabel = draft.settings.type.charAt(0) + draft.settings.type.slice(1).toLowerCase();
+    
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#4285F4', '#34A853', '#FBBC05', '#EA4335']
+    });
+
     setCampaigns([{ 
       id: Date.now(), 
       name: draft.settings.name, 
